@@ -1,0 +1,7 @@
+*.class
+out/
+bin/
+.idea/
+*.iml
+.vscode/
+.claude/
