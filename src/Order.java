@@ -36,27 +36,23 @@ public class Order {
     private boolean finalizado;
 
     /**
-     * Construtor: recebe id, clienteId e o ClientRepository.
-     * - data é preenchida automaticamente com a data atual (LocalDate.now()).
-     * - itens começa como uma lista vazia (o pedido nasce sem itens).
-     * - status começa como "PENDENTE".
-     * - finalizado começa como false (o pedido ainda pode ser alterado).
+     * Construtor: recebe id e clienteId apenas — sem repositório.
      *
-     * BÔNUS - Validação extra: antes de criar o pedido, verificamos
-     * no clienteRepo se esse clienteId realmente corresponde a um
-     * cliente cadastrado. Isso evita criar um "pedido fantasma",
-     * associado a um cliente que não existe no sistema.
+     * O Order é uma ENTIDADE DE DOMÍNIO: ele representa "o que é um
+     * pedido" e protege apenas as regras que dependem só dele mesmo
+     * (ex: "pedido finalizado não aceita itens"). Ele NÃO deve saber
+     * se o cliente existe no banco de dados, se há estoque disponível,
+     * ou qualquer outra coisa que dependa de infraestrutura externa.
+     * Isso é responsabilidade da camada de serviço (Service), não do
+     * modelo.
      *
-     * IMPORTANTE: o ClientRepository é usado SÓ durante a validação,
-     * dentro deste construtor. Ele NÃO é guardado como atributo do
-     * Order. Continuamos guardando apenas "this.clienteId = clienteId"
-     * - a agregação (referência fraca por id) não muda em nada.
+     * Benefícios de manter o Order puro:
+     * - Testabilidade: para criar um Order em testes, basta passar
+     *   dois ints — sem precisar montar repositório nenhum.
+     * - Baixo acoplamento: se o dia de amanhã o repositório falar com
+     *   MySQL, o Order não precisa saber disso.
      */
-    public Order(int id, int clienteId, ClientRepository clienteRepo) {
-        if (clienteRepo == null || !clienteRepo.existe(clienteId)) {
-            throw new IllegalArgumentException(
-                "Não é possível criar o pedido: cliente com id " + clienteId + " não existe.");
-        }
+    public Order(int id, int clienteId) {
         this.id = id;
         this.clienteId = clienteId;
         this.data = LocalDate.now();
@@ -115,19 +111,17 @@ public class Order {
      * decide dar baixa no estoque é um sistema externo (ex: o Main,
      * ou um futuro "EstoqueService"), conforme pedido no enunciado.
      *
-     * BÔNUS - Validação extra: antes de criar o item, verificamos no
-     * produtoRepo se esse produtoId realmente existe no catálogo.
-     * Assim como no construtor, o ProductRepository é usado SÓ aqui,
-     * na validação - ele não é guardado como atributo do Order nem
-     * do OrderItem, que continuam guardando apenas "produtoId" (int).
+     * A validação de existência do produto (produtoId existe no
+     * catálogo?) também NÃO fica aqui — é responsabilidade da camada
+     * de serviço, que chama este método só depois de já ter verificado.
+     * Regra de ouro: o model protege regras que dependem SÓ DELE
+     * MESMO (ex: "pedido finalizado não aceita item"). Regras que
+     * dependem de outras entidades ou do sistema inteiro ficam no
+     * service.
      */
-    public void adicionarItem(int produtoId, int quantidade, double precoUnitario, ProductRepository produtoRepo) {
+    public void adicionarItem(int produtoId, int quantidade, double precoUnitario) {
         if (finalizado) {
-            throw new IllegalStateException("Não é possível adicionar itens a um pedido já finalizado.");
-        }
-        if (produtoRepo == null || !produtoRepo.existe(produtoId)) {
-            throw new IllegalArgumentException(
-                "Não é possível adicionar item: produto com id " + produtoId + " não existe.");
+            throw new IllegalStateException("Pedido finalizado não pode receber itens.");
         }
         int novoId = itens.size() + 1; // id sequencial simples dentro do pedido
         OrderItem novoItem = new OrderItem(novoId, produtoId, quantidade, precoUnitario);

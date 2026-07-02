@@ -95,14 +95,22 @@ public class Main {
         System.out.println(">>> 3) Criando pedidos...");
 
         // ---- Pedido #1: João Silva compra 2 Notebooks e 3 Mouses ----
-        Order pedido1 = new Order(1, cliente1.getId(), clienteRepo);
+        // A validação de existência do cliente agora é feita AQUI, no
+        // Main (que age como camada de serviço), ANTES de criar o Order.
+        // O Order em si é uma entidade pura: só recebe id e clienteId.
+        if (!clienteRepo.existe(cliente1.getId())) {
+            throw new IllegalArgumentException("Cliente não encontrado: " + cliente1.getId());
+        }
+        Order pedido1 = new Order(1, cliente1.getId());
 
-        // O preço guardado em cada item é uma CÓPIA do preço atual
-        // do produto (product.getPreco()). A partir daqui, o pedido
-        // não depende mais do preço "ao vivo" do produto. O
-        // produtoRepo, aqui, só serve para validar que o produto existe.
-        pedido1.adicionarItem(notebook.getId(), 2, notebook.getPreco(), produtoRepo);
-        pedido1.adicionarItem(mouse.getId(), 3, mouse.getPreco(), produtoRepo);
+        // Validamos a existência do produto ANTES de chamar adicionarItem.
+        // O preço guardado em cada item é uma CÓPIA do preço atual do
+        // produto. A partir daqui, o pedido não depende mais do preço
+        // "ao vivo" do produto.
+        if (!produtoRepo.existe(notebook.getId())) throw new IllegalArgumentException("Produto não encontrado.");
+        pedido1.adicionarItem(notebook.getId(), 2, notebook.getPreco());
+        if (!produtoRepo.existe(mouse.getId())) throw new IllegalArgumentException("Produto não encontrado.");
+        pedido1.adicionarItem(mouse.getId(), 3, mouse.getPreco());
 
         // Quem dá baixa no estoque é o "sistema externo" (aqui, o
         // próprio Main fazendo esse papel), e não o Order.
@@ -110,9 +118,14 @@ public class Main {
         mouse.baixarEstoque(3);
 
         // ---- Pedido #2: Maria Santos compra 1 Teclado e 2 Monitores ----
-        Order pedido2 = new Order(2, cliente2.getId(), clienteRepo);
-        pedido2.adicionarItem(teclado.getId(), 1, teclado.getPreco(), produtoRepo);
-        pedido2.adicionarItem(monitor.getId(), 2, monitor.getPreco(), produtoRepo);
+        if (!clienteRepo.existe(cliente2.getId())) {
+            throw new IllegalArgumentException("Cliente não encontrado: " + cliente2.getId());
+        }
+        Order pedido2 = new Order(2, cliente2.getId());
+        if (!produtoRepo.existe(teclado.getId())) throw new IllegalArgumentException("Produto não encontrado.");
+        pedido2.adicionarItem(teclado.getId(), 1, teclado.getPreco());
+        if (!produtoRepo.existe(monitor.getId())) throw new IllegalArgumentException("Produto não encontrado.");
+        pedido2.adicionarItem(monitor.getId(), 2, monitor.getPreco());
 
         teclado.baixarEstoque(1);
         monitor.baixarEstoque(2);
@@ -161,7 +174,7 @@ public class Main {
         // não pode mais ser alterado.
         System.out.println(">>> 7) Tentando adicionar item a um pedido já finalizado...");
         try {
-            pedido1.adicionarItem(teclado.getId(), 1, teclado.getPreco(), produtoRepo);
+            pedido1.adicionarItem(teclado.getId(), 1, teclado.getPreco());
             System.out.println("ERRO: o item foi adicionado, mas isso não deveria ter acontecido!");
         } catch (IllegalStateException e) {
             System.out.println("Exceção capturada como esperado: " + e.getMessage());
@@ -194,23 +207,26 @@ public class Main {
         // ===================================================
         // 9) BÔNUS - VALIDAÇÕES EXTRAS (cliente/produto inexistentes)
         // ===================================================
-        // Tentamos criar um pedido para um clienteId que não está
-        // cadastrado no clienteRepo, e adicionar um item com um
-        // produtoId que não está cadastrado no produtoRepo. Os dois
-        // devem lançar IllegalArgumentException, comprovando que o
-        // Order agora valida a EXISTÊNCIA das entidades que referencia
-        // antes de aceitar a operação.
+        // A validação agora fica na camada de serviço (aqui, o Main),
+        // ANTES de chamar Order. O Order não conhece repositório — quem
+        // checa existência é o código que orquestra a operação.
         System.out.println(">>> 9) Testando validações extras (cliente/produto inexistentes)...");
         try {
-            new Order(99, 999, clienteRepo); // clienteId 999 não existe
-            System.out.println("ERRO: pedido criado para cliente inexistente, mas não deveria!");
+            int clienteIdInexistente = 999;
+            if (!clienteRepo.existe(clienteIdInexistente)) {
+                throw new IllegalArgumentException("Cliente com id " + clienteIdInexistente + " não existe.");
+            }
+            new Order(99, clienteIdInexistente);
         } catch (IllegalArgumentException e) {
             System.out.println("Exceção capturada como esperado (cliente inexistente): " + e.getMessage());
         }
 
         try {
-            pedido2.adicionarItem(888, 1, 10.0, produtoRepo); // produtoId 888 não existe
-            System.out.println("ERRO: item adicionado com produto inexistente, mas não deveria!");
+            int produtoIdInexistente = 888;
+            if (!produtoRepo.existe(produtoIdInexistente)) {
+                throw new IllegalArgumentException("Produto com id " + produtoIdInexistente + " não existe.");
+            }
+            pedido2.adicionarItem(produtoIdInexistente, 1, 10.0);
         } catch (IllegalArgumentException e) {
             System.out.println("Exceção capturada como esperado (produto inexistente): " + e.getMessage());
         }
