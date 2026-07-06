@@ -1,0 +1,22 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: mysql-loja
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: loja
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dados_mysql:/var/lib/mysql
+      # init.sql removido: Flyway cria o schema na inicialização da aplicação
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  dados_mysql:

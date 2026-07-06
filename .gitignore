@@ -1,7 +1,9 @@
 *.class
+target/
 out/
 bin/
 .idea/
 *.iml
-.vscode/
+.vscode/*.code-workspace
 .claude/
+.env
