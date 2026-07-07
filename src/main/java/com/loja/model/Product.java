@@ -14,12 +14,13 @@ public class Product {
     private String nome;
     private double preco;
     private int estoque;
+    private boolean isActive;
 
-    public Product(int id, String nome, double preco) {
-        this.id = id;
+    public Product(String nome, double preco) {
         this.nome = nome;
         this.preco = preco;
         this.estoque = 0;
+        this.isActive = true;
     }
 
     public int getId() { return id; }
@@ -33,6 +34,9 @@ public class Product {
 
     public int getEstoque() { return estoque; }
     public void setEstoque(int estoque) { this.estoque = estoque; }
+
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { this.isActive = active; }
 
     public void reporEstoque(int quantidade) {
         if (quantidade < 0) throw new IllegalArgumentException("Quantidade não pode ser negativa.");

@@ -1,19 +1,22 @@
 CREATE TABLE client (
-    id       INT          PRIMARY KEY,
-    nome     VARCHAR(120) NOT NULL,
-    email    VARCHAR(120) NOT NULL,
-    telefone VARCHAR(30)
+    id        INT          PRIMARY KEY AUTO_INCREMENT,
+    nome      VARCHAR(120) NOT NULL,
+    email     VARCHAR(120) NOT NULL,
+    telefone  VARCHAR(30),
+    cpf       VARCHAR(14)  UNIQUE,
+    is_active BOOLEAN      NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE product (
-    id      INT           PRIMARY KEY,
-    nome    VARCHAR(120)  NOT NULL,
-    preco   DECIMAL(10,2) NOT NULL,
-    estoque INT           NOT NULL DEFAULT 0
+    id        INT           PRIMARY KEY AUTO_INCREMENT,
+    nome      VARCHAR(120)  NOT NULL,
+    preco     DECIMAL(10,2) NOT NULL,
+    estoque   INT           NOT NULL DEFAULT 0,
+    is_active BOOLEAN       NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE orders (
-    id         INT         PRIMARY KEY,
+    id         INT         PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT         NOT NULL,
     data       DATE        NOT NULL,
     status     VARCHAR(20) NOT NULL,

@@ -14,11 +14,8 @@ public class ProdutoService {
     }
 
     public void cadastrar(Product produto) {
-        if (repo.buscarPorId(produto.getId()).isPresent()) {
-            throw new IllegalArgumentException("Produto com id " + produto.getId() + " já existe.");
-        }
         repo.inserir(produto);
-        System.out.println("Produto cadastrado: " + produto.getNome());
+        System.out.println("Produto cadastrado: " + produto.getNome() + " (id=" + produto.getId() + ")");
     }
 
     public Product buscar(int id) {
@@ -34,9 +31,15 @@ public class ProdutoService {
         return repo.listarTodos();
     }
 
+    public void desativar(int id) {
+        buscar(id); // valida que o produto existe e está ativo
+        repo.desativar(id);
+        System.out.println("Produto #" + id + " desativado.");
+    }
+
     public void reporEstoque(int id, int quantidade) {
         Product p = buscar(id);
-        p.reporEstoque(quantidade); // valida regra de domínio (quantidade >= 0)
+        p.reporEstoque(quantidade);
         repo.atualizar(p);
         System.out.println("Estoque de '" + p.getNome() + "' atualizado para " + p.getEstoque());
     }

@@ -13,18 +13,20 @@ public class OrderRepositoryMySQL implements OrderRepository {
 
     @Override
     public void inserir(Order order) {
-        String sqlOrder = "INSERT INTO orders (id, cliente_id, data, status, finalizado) VALUES (?, ?, ?, ?, ?)";
+        String sqlOrder = "INSERT INTO orders (cliente_id, data, status, finalizado) VALUES (?, ?, ?, ?)";
         String sqlItem  = "INSERT INTO order_item (id, order_id, produto_id, quantidade, preco_unitario) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = Database.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                try (PreparedStatement ps = conn.prepareStatement(sqlOrder)) {
-                    ps.setInt(1, order.getId());
-                    ps.setInt(2, order.getClienteId());
-                    ps.setDate(3, Date.valueOf(order.getData()));
-                    ps.setString(4, order.getStatus());
-                    ps.setBoolean(5, order.isFinalizado());
+                try (PreparedStatement ps = conn.prepareStatement(sqlOrder, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt(1, order.getClienteId());
+                    ps.setDate(2, Date.valueOf(order.getData()));
+                    ps.setString(3, order.getStatus());
+                    ps.setBoolean(4, order.isFinalizado());
                     ps.executeUpdate();
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (rs.next()) order.setId(rs.getInt(1));
+                    }
                 }
                 inserirItens(conn, order, sqlItem);
                 conn.commit();

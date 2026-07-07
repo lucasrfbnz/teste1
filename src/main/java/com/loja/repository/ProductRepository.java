@@ -10,5 +10,6 @@ public interface ProductRepository {
     Optional<Product> buscarPorId(int id);
     List<Product> listarTodos();
     void atualizar(Product p);
+    void desativar(int id);
     void deletar(int id);
 }

@@ -27,14 +27,13 @@ public class PedidoService {
         this.produtoSvc = produtoSvc;
     }
 
-    public Order criarPedido(int id, int clienteId) {
-        // delega a validação de existência ao ClienteService
+    public Order criarPedido(int clienteId) {
         if (!clienteSvc.existe(clienteId)) {
             throw new IllegalArgumentException("Cliente com id " + clienteId + " não existe.");
         }
-        Order order = new Order(id, clienteId);
-        orderRepo.inserir(order);
-        System.out.println("Pedido #" + id + " criado para clienteId=" + clienteId);
+        Order order = new Order(0, clienteId); // 0 = banco vai gerar o id
+        orderRepo.inserir(order);              // seta order.id via RETURN_GENERATED_KEYS
+        System.out.println("Pedido #" + order.getId() + " criado para clienteId=" + clienteId);
         return order;
     }
 
@@ -59,6 +58,7 @@ public class PedidoService {
     }
 
     public List<Order> listarPorCliente(int clienteId) {
+        
         return orderRepo.listarPorCliente(clienteId);
     }
 

@@ -13,21 +13,14 @@ import com.loja.service.ProdutoService;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * Ponto de entrada da aplicação — menu interativo no console.
- * Usa os Services (nunca acessa Repositories diretamente).
- * Aqui fazemos o "wiring" manual: criamos os repos e injetamos nos services.
- */
 public class Main {
 
     private static final Scanner sc = new Scanner(System.in);
 
-    // 1. criar as implementações MySQL dos repositórios
     private static final ClientRepositoryMySQL  clientRepo  = new ClientRepositoryMySQL();
     private static final ProductRepositoryMySQL productRepo = new ProductRepositoryMySQL();
     private static final OrderRepositoryMySQL   orderRepo   = new OrderRepositoryMySQL();
 
-    // 2. injetar os repositórios nos services
     private static final ClienteService clienteSvc = new ClienteService(clientRepo);
     private static final ProdutoService produtoSvc = new ProdutoService(productRepo);
     private static final PedidoService  pedidoSvc  = new PedidoService(orderRepo, clienteSvc, produtoSvc);
@@ -46,6 +39,9 @@ public class Main {
                     case 4 -> criarPedido();
                     case 5 -> listarPedidosPorCliente();
                     case 6 -> excluirPedido();
+                    case 7 -> buscarClientePorCpf();
+                    case 8 -> desativarCliente();
+                    case 9 -> desativarProduto();
                     case 0 -> System.out.println("Encerrando...");
                     default -> System.out.println("Opção inválida.");
                 }
@@ -66,6 +62,9 @@ public class Main {
         System.out.println("4. Criar pedido");
         System.out.println("5. Listar pedidos de um cliente");
         System.out.println("6. Excluir pedido");
+        System.out.println("7. Buscar cliente por CPF");
+        System.out.println("8. Desativar cliente");
+        System.out.println("9. Desativar produto");
         System.out.println("0. Sair");
         System.out.println("-----------------------");
     }
@@ -73,11 +72,11 @@ public class Main {
     // ---- handlers ----
 
     private static void cadastrarCliente() {
-        int    id       = lerInt("Id: ");
         String nome     = lerString("Nome: ");
         String email    = lerString("Email: ");
         String telefone = lerString("Telefone: ");
-        clienteSvc.cadastrar(new Client(id, nome, email, telefone));
+        String cpf      = lerString("CPF: ");
+        clienteSvc.cadastrar(new Client(nome, email, telefone, cpf));
     }
 
     private static void listarClientes() {
@@ -87,20 +86,17 @@ public class Main {
     }
 
     private static void cadastrarProduto() {
-        int    id     = lerInt("Id: ");
         String nome   = lerString("Nome: ");
         double preco  = lerDouble("Preço: ");
         int estoque   = lerInt("Estoque inicial: ");
-        Product p = new Product(id, nome, preco);
+        Product p = new Product(nome, preco);
         p.setEstoque(estoque);
         produtoSvc.cadastrar(p);
     }
 
-    // Criar pedido já inclui o loop de adição de itens
     private static void criarPedido() {
-        int pedidoId  = lerInt("Id do pedido: ");
         int clienteId = lerInt("Id do cliente: ");
-        Order order = pedidoSvc.criarPedido(pedidoId, clienteId);
+        Order order = pedidoSvc.criarPedido(clienteId);
 
         System.out.println("--- Adicionar itens (0 para terminar) ---");
         while (true) {
@@ -109,7 +105,7 @@ public class Main {
             int quantidade = lerInt("Quantidade: ");
             pedidoSvc.adicionarItem(order, produtoId, quantidade);
         }
-        System.out.println("Pedido #" + pedidoId + " criado com " + order.getQuantidadeItens() + " item(s).");
+        System.out.println("Pedido #" + order.getId() + " criado com " + order.getQuantidadeItens() + " item(s).");
     }
 
     private static void listarPedidosPorCliente() {
@@ -127,6 +123,22 @@ public class Main {
     private static void excluirPedido() {
         int pedidoId = lerInt("Id do pedido: ");
         pedidoSvc.deletar(pedidoId);
+    }
+
+    private static void buscarClientePorCpf() {
+        String cpf = lerString("CPF: ");
+        Client c = clienteSvc.buscarPorCpf(cpf);
+        System.out.println(c);
+    }
+
+    private static void desativarCliente() {
+        int id = lerInt("Id do cliente: ");
+        clienteSvc.desativar(id);
+    }
+
+    private static void desativarProduto() {
+        int id = lerInt("Id do produto: ");
+        produtoSvc.desativar(id);
     }
 
     // ---- utilitários de leitura ----

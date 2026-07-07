@@ -12,14 +12,16 @@ public class ProductRepositoryMySQL implements ProductRepository {
 
     @Override
     public void inserir(Product p) {
-        String sql = "INSERT INTO product (id, nome, preco, estoque) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO product (nome, preco, estoque) VALUES (?, ?, ?)";
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, p.getId());
-            ps.setString(2, p.getNome());
-            ps.setDouble(3, p.getPreco());
-            ps.setInt(4, p.getEstoque());
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, p.getNome());
+            ps.setDouble(2, p.getPreco());
+            ps.setInt(3, p.getEstoque());
             ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) p.setId(rs.getInt(1));
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao inserir produto", e);
         }
@@ -27,7 +29,7 @@ public class ProductRepositoryMySQL implements ProductRepository {
 
     @Override
     public Optional<Product> buscarPorId(int id) {
-        String sql = "SELECT * FROM product WHERE id = ?";
+        String sql = "SELECT id, nome, preco, estoque, is_active FROM product WHERE id = ? AND is_active = TRUE";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -43,10 +45,10 @@ public class ProductRepositoryMySQL implements ProductRepository {
     @Override
     public List<Product> listarTodos() {
         List<Product> lista = new ArrayList<>();
-        String sql = "SELECT * FROM product";
+        String sql = "SELECT id, nome, preco, estoque, is_active FROM product WHERE is_active = TRUE";
         try (Connection conn = Database.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) lista.add(mapear(rs));
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao listar produtos", e);
@@ -70,6 +72,18 @@ public class ProductRepositoryMySQL implements ProductRepository {
     }
 
     @Override
+    public void desativar(int id) {
+        String sql = "UPDATE product SET is_active = FALSE WHERE id = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao desativar produto", e);
+        }
+    }
+
+    @Override
     public void deletar(int id) {
         String sql = "DELETE FROM product WHERE id = ?";
         try (Connection conn = Database.getConnection();
@@ -82,8 +96,10 @@ public class ProductRepositoryMySQL implements ProductRepository {
     }
 
     private Product mapear(ResultSet rs) throws SQLException {
-        Product p = new Product(rs.getInt("id"), rs.getString("nome"), rs.getDouble("preco"));
+        Product p = new Product(rs.getString("nome"), rs.getDouble("preco"));
+        p.setId(rs.getInt("id"));
         p.setEstoque(rs.getInt("estoque"));
+        p.setActive(rs.getBoolean("is_active"));
         return p;
     }
 }

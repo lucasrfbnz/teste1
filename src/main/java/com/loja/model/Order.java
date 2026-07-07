@@ -96,6 +96,7 @@ public class Order {
     public List<OrderItem> getItens() { return Collections.unmodifiableList(itens); }
 
     // Setters usados pelo repository ao reconstruir do banco
+    public void setId(int id) { this.id = id; }
     public void setData(LocalDate data) { this.data = data; }
     public void setStatus(String status) { this.status = status; }
     public void setFinalizado(boolean finalizado) { this.finalizado = finalizado; }
