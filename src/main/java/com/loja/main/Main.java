@@ -48,7 +48,8 @@ public class Main {
             } catch (IllegalArgumentException | IllegalStateException e) {
                 System.out.println("Erro: " + e.getMessage());
             } catch (RuntimeException e) {
-                System.out.println("Erro de banco de dados: " + e.getMessage());
+                String causa = e.getCause() != null ? e.getCause().getMessage() : "?";
+                System.out.println("Erro de banco de dados: " + e.getMessage() + " | Causa: " + causa);
             }
             System.out.println();
         } while (opcao != 0);
