@@ -12,5 +12,6 @@ public interface ClientRepository {
     List<Client> listarTodos();
     void atualizar(Client c);
     void desativar(int id);
+    void reativar(String cpf);
     void deletar(int id);
 }

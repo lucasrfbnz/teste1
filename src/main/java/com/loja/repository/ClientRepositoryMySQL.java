@@ -101,6 +101,18 @@ public class ClientRepositoryMySQL implements ClientRepository {
     }
 
     @Override
+    public void reativar(String cpf) {
+        String sql = "UPDATE client SET is_active = TRUE WHERE cpf = ?";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, cpf);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao reativar cliente", e);
+        }
+    }
+
+    @Override
     public void deletar(int id) {
         String sql = "DELETE FROM client WHERE id = ?";
         try (Connection conn = Database.getConnection();

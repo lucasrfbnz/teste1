@@ -42,6 +42,7 @@ public class Main {
                     case 7 -> buscarClientePorCpf();
                     case 8 -> desativarCliente();
                     case 9 -> desativarProduto();
+                    case 10 -> reativarCliente();
                     case 0 -> System.out.println("Encerrando...");
                     default -> System.out.println("Opção inválida.");
                 }
@@ -66,6 +67,7 @@ public class Main {
         System.out.println("7. Buscar cliente por CPF");
         System.out.println("8. Desativar cliente");
         System.out.println("9. Desativar produto");
+        System.out.println("10. Reativar cliente por CPF");
         System.out.println("0. Sair");
         System.out.println("-----------------------");
     }
@@ -140,6 +142,11 @@ public class Main {
     private static void desativarProduto() {
         int id = lerInt("Id do produto: ");
         produtoSvc.desativar(id);
+    }
+
+    private static void reativarCliente() {
+        String cpf = lerString("CPF: ");
+        clienteSvc.reativar(cpf);
     }
 
     // ---- utilitários de leitura ----

@@ -41,4 +41,12 @@ public class ClienteService {
         repo.desativar(id);
         System.out.println("Cliente #" + id + " desativado.");
     }
+
+    public void reativar(String cpf) {
+        if (repo.buscarPorCpf(cpf).isPresent()) {
+            throw new IllegalArgumentException("Cliente com CPF " + cpf + " já está ativo.");
+        }
+        repo.reativar(cpf);
+        System.out.println("Cliente com CPF " + cpf + " reativado.");
+    }
 }
