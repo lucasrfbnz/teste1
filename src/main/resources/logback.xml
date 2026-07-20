@@ -1,0 +1,22 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- SQL gerado pelo Hibernate (substitui show_sql/format_sql do persistence.xml) -->
+    <logger name="org.hibernate.SQL"           level="DEBUG"/>
+    <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/>
+
+    <!-- Silencia ruído de startup do Hibernate e Flyway -->
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.flywaydb"  level="INFO"/>
+
+    <!-- Código da aplicação: INFO em produção, mude para DEBUG ao depurar -->
+    <logger name="com.loja" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

@@ -1,5 +1,7 @@
 package com.loja.service;
 
+import com.loja.exception.ConflictException;
+import com.loja.exception.NotFoundException;
 import com.loja.model.Client;
 import com.loja.repository.ClientRepository;
 
@@ -13,19 +15,22 @@ public class ClienteService {
         this.repo = repo;
     }
 
-    public void cadastrar(Client cliente) {
+    public Client cadastrar(Client cliente) {
+        if (repo.buscarPorCpf(cliente.getCpf()).isPresent()) {
+            throw new ConflictException("Já existe cliente ativo com o CPF " + cliente.getCpf());
+        }
         repo.inserir(cliente);
-        System.out.println("Cliente cadastrado: " + cliente.getNome() + " (id=" + cliente.getId() + ")");
+        return cliente;
     }
 
     public Client buscar(int id) {
         return repo.buscarPorId(id)
-                .orElseThrow(() -> new IllegalArgumentException("Cliente com id " + id + " não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Cliente com id " + id + " não encontrado."));
     }
 
     public Client buscarPorCpf(String cpf) {
         return repo.buscarPorCpf(cpf)
-                .orElseThrow(() -> new IllegalArgumentException("Cliente com CPF " + cpf + " não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Cliente com CPF " + cpf + " não encontrado."));
     }
 
     public boolean existe(int id) {
@@ -36,17 +41,25 @@ public class ClienteService {
         return repo.listarTodos();
     }
 
+    public Client atualizar(int id, Client dadosNovos) {
+        Client c = buscar(id);
+        c.setNome(dadosNovos.getNome());
+        c.setEmail(dadosNovos.getEmail());
+        c.setTelefone(dadosNovos.getTelefone());
+        c.setCpf(dadosNovos.getCpf());
+        repo.atualizar(c);
+        return c;
+    }
+
     public void desativar(int id) {
-        buscar(id); // valida que o cliente existe e está ativo
+        buscar(id);
         repo.desativar(id);
-        System.out.println("Cliente #" + id + " desativado.");
     }
 
     public void reativar(String cpf) {
         if (repo.buscarPorCpf(cpf).isPresent()) {
-            throw new IllegalArgumentException("Cliente com CPF " + cpf + " já está ativo.");
+            throw new ConflictException("Cliente com CPF " + cpf + " já está ativo.");
         }
         repo.reativar(cpf);
-        System.out.println("Cliente com CPF " + cpf + " reativado.");
     }
 }

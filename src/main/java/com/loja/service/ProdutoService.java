@@ -1,5 +1,6 @@
 package com.loja.service;
 
+import com.loja.exception.NotFoundException;
 import com.loja.model.Product;
 import com.loja.repository.ProductRepository;
 
@@ -13,14 +14,14 @@ public class ProdutoService {
         this.repo = repo;
     }
 
-    public void cadastrar(Product produto) {
+    public Product cadastrar(Product produto) {
         repo.inserir(produto);
-        System.out.println("Produto cadastrado: " + produto.getNome() + " (id=" + produto.getId() + ")");
+        return produto;
     }
 
     public Product buscar(int id) {
         return repo.buscarPorId(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produto com id " + id + " não encontrado."));
+                .orElseThrow(() -> new NotFoundException("Produto com id " + id + " não encontrado."));
     }
 
     public boolean existe(int id) {
@@ -32,15 +33,14 @@ public class ProdutoService {
     }
 
     public void desativar(int id) {
-        buscar(id); // valida que o produto existe e está ativo
+        buscar(id);
         repo.desativar(id);
-        System.out.println("Produto #" + id + " desativado.");
     }
 
-    public void reporEstoque(int id, int quantidade) {
+    public Product reporEstoque(int id, int quantidade) {
         Product p = buscar(id);
         p.reporEstoque(quantidade);
         repo.atualizar(p);
-        System.out.println("Estoque de '" + p.getNome() + "' atualizado para " + p.getEstoque());
+        return p;
     }
 }

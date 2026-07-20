@@ -1,30 +1,44 @@
 package com.loja.model;
 
-/**
- * Entidade de domínio: representa um cliente da loja.
- *
- * AGREGAÇÃO: Order -> Client (fraca).
- * O cliente existe independentemente de qualquer pedido.
- * Order guarda apenas o clienteId (int), não este objeto inteiro.
- */
+import jakarta.persistence.*;
+import org.hibernate.annotations.SQLRestriction;
+
+@Entity
+@Table(name = "client")
+@SQLRestriction("is_active = true")
 public class Client {
 
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(nullable = false, length = 120)
     private String nome;
+
+    @Column(nullable = false, length = 120)
     private String email;
+
+    @Column(length = 30)
     private String telefone;
+
+    @Column(unique = true, length = 14)
     private String cpf;
-    private boolean isActive;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
+    // JPA exige construtor sem argumentos. Protegido: é para o Hibernate, não para o seu código.
+    protected Client() {}
 
     public Client(String nome, String email, String telefone, String cpf) {
         this.nome = nome;
         this.email = email;
         this.telefone = telefone;
         this.cpf = cpf;
-        this.isActive = true;
+        this.active = true;
     }
 
-    public int getId() { return id; }
+    public Integer getId() { return id; }
     public void setId(int id) { this.id = id; }
 
     public String getNome() { return nome; }
@@ -39,8 +53,8 @@ public class Client {
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
 
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { this.isActive = active; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     @Override
     public String toString() {

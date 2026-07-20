@@ -1,29 +1,40 @@
 package com.loja.model;
 
-/**
- * Entidade de domínio: representa um produto do catálogo.
- *
- * AGREGAÇÃO: OrderItem -> Product (fraca).
- * O produto existe independentemente de qualquer item de pedido.
- * OrderItem guarda apenas o produtoId (int) e uma cópia do preço
- * no momento da compra — não guarda este objeto inteiro.
- */
+import com.loja.exception.ValidationException;
+import jakarta.persistence.*;
+import org.hibernate.annotations.SQLRestriction;
+
+@Entity
+@Table(name = "product")
+@SQLRestriction("is_active = true")
 public class Product {
 
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(nullable = false, length = 120)
     private String nome;
+
+    @Column(nullable = false)
     private double preco;
+
+    @Column(nullable = false)
     private int estoque;
-    private boolean isActive;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
+    protected Product() {}
 
     public Product(String nome, double preco) {
         this.nome = nome;
         this.preco = preco;
         this.estoque = 0;
-        this.isActive = true;
+        this.active = true;
     }
 
-    public int getId() { return id; }
+    public Integer getId() { return id; }
     public void setId(int id) { this.id = id; }
 
     public String getNome() { return nome; }
@@ -35,8 +46,8 @@ public class Product {
     public int getEstoque() { return estoque; }
     public void setEstoque(int estoque) { this.estoque = estoque; }
 
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { this.isActive = active; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public void reporEstoque(int quantidade) {
         if (quantidade < 0) throw new IllegalArgumentException("Quantidade não pode ser negativa.");
@@ -45,7 +56,7 @@ public class Product {
 
     public void baixarEstoque(int quantidade) {
         if (quantidade < 0) throw new IllegalArgumentException("Quantidade não pode ser negativa.");
-        if (quantidade > this.estoque) throw new IllegalStateException(
+        if (quantidade > this.estoque) throw new ValidationException(
                 "Estoque insuficiente para '" + nome + "'. Atual: " + estoque + ", solicitado: " + quantidade);
         this.estoque -= quantidade;
     }

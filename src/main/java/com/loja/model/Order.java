@@ -1,44 +1,55 @@
 package com.loja.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Entidade de domínio: representa um pedido.
- *
- * AGREGAÇÃO com Client: guarda apenas clienteId (int).
- * COMPOSIÇÃO com OrderItem: cria e controla o ciclo de vida dos itens.
- *
- * Regra de ouro: o model protege apenas regras que dependem SÓ DELE
- * (ex: pedido finalizado não aceita mais itens). Validações que
- * dependem de outras entidades (cliente existe? produto existe?)
- * ficam na camada de serviço (PedidoService).
- */
+@Entity
+@Table(name = "orders")
 public class Order {
 
-    private int id;
-    private int clienteId;         // AGREGAÇÃO: só o id, não o objeto Client
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    // AGREGAÇÃO (Order -> Client): há uma referência, mas SEM cascade.
+    // O pedido NÃO controla o ciclo de vida do cliente: apagar o pedido não apaga o cliente.
+    // LAZY = só carrega o Client se alguém pedir.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cliente_id")
+    private Client cliente;
+
+    @Column(nullable = false)
     private LocalDate data;
-    private List<OrderItem> itens; // COMPOSIÇÃO: Order cria e owns os itens
+
+    @Column(nullable = false, length = 20)
     private String status;
+
+    @Column(nullable = false)
     private boolean finalizado;
 
-    public Order(int id, int clienteId) {
-        this.id = id;
-        this.clienteId = clienteId;
+    // COMPOSIÇÃO (Order -> OrderItem): cascade = ALL + orphanRemoval = true.
+    // "O que acontece ao pedido acontece aos itens": salvou o pedido, salvou os itens;
+    // apagou o pedido, apagou os itens. E se um item for removido da lista, ele vira
+    // "órfão" e é DELETADO do banco. Isto é a composição, expressa em JPA.
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> itens = new ArrayList<>();
+
+    protected Order() {}
+
+    public Order(Client cliente) {
+        this.cliente = cliente;
         this.data = LocalDate.now();
-        this.itens = new ArrayList<>();
         this.status = "PENDENTE";
         this.finalizado = false;
     }
 
-    // Regra de domínio pura: depende só do estado interno do próprio Order
-    public void adicionarItem(int produtoId, int quantidade, double precoUnitario) {
+    // Regra de domínio pura — continua exatamente como estava
+    public void adicionarItem(Product produto, int quantidade) {
         if (finalizado) throw new IllegalStateException("Pedido finalizado não pode receber itens.");
-        int novoId = itens.size() + 1;
-        itens.add(new OrderItem(novoId, produtoId, quantidade, precoUnitario));
+        itens.add(new OrderItem(this, produto, quantidade, produto.getPreco()));
     }
 
     public void removerItem(int index) {
@@ -53,51 +64,24 @@ public class Order {
     }
 
     public double calcularTotal() {
-        double total = 0;
-        for (OrderItem item : itens) total += item.calcularSubtotal();
-        return total;
+        return itens.stream().mapToDouble(OrderItem::calcularSubtotal).sum();
     }
 
     public int getQuantidadeItens() { return itens.size(); }
 
-    /**
-     * Usado pelo OrderRepository para reconstruir um Order carregado
-     * do banco — injeta itens diretamente sem checar finalizado,
-     * pois o estado já vem persistido corretamente.
-     */
-    public void carregarItem(OrderItem item) {
-        itens.add(item);
-    }
-
-    public void exibirResumo(Client cliente, Product... produtos) {
-        System.out.println("===== Resumo do Pedido #" + id + " =====");
-        System.out.println("Data: " + data);
-        System.out.println("Status: " + status + (finalizado ? " (finalizado)" : " (em aberto)"));
-        System.out.println("Cliente: " + (cliente != null ? cliente.getNome() : "id=" + clienteId));
-        System.out.println("Itens:");
-        for (OrderItem item : itens) {
-            Product prod = null;
-            for (Product p : produtos) if (p.getId() == item.getProdutoId()) { prod = p; break; }
-            String nome = prod != null ? prod.getNome() : "Produto#" + item.getProdutoId();
-            System.out.println("  - " + nome + " | qtd: " + item.getQuantidade()
-                    + " | preço unit.: R$ " + item.getPrecoUnitario()
-                    + " | subtotal: R$ " + item.calcularSubtotal());
-        }
-        System.out.println("TOTAL: R$ " + calcularTotal());
-        System.out.println("==========================================");
-    }
-
-    // Getters
-    public int getId() { return id; }
-    public int getClienteId() { return clienteId; }
-    public LocalDate getData() { return data; }
-    public String getStatus() { return status; }
-    public boolean isFinalizado() { return finalizado; }
-    public List<OrderItem> getItens() { return Collections.unmodifiableList(itens); }
-
-    // Setters usados pelo repository ao reconstruir do banco
+    public Integer getId() { return id; }
     public void setId(int id) { this.id = id; }
+
+    public Client getCliente() { return cliente; }
+
+    public LocalDate getData() { return data; }
     public void setData(LocalDate data) { this.data = data; }
+
+    public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public boolean isFinalizado() { return finalizado; }
     public void setFinalizado(boolean finalizado) { this.finalizado = finalizado; }
+
+    public List<OrderItem> getItens() { return Collections.unmodifiableList(itens); }
 }
